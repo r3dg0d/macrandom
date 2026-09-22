@@ -1,0 +1,12 @@
+/target
+**/*.rs.bk
+*.swp
+*.swo
+*~
+.DS_Store
+/.direnv
+/result
+/result-*
+.env
+.env.*
+!.env.example

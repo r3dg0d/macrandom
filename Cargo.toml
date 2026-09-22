@@ -1,0 +1,49 @@
+[package]
+name = "macrandom"
+version = "0.1.0"
+edition = "2021"
+authors = ["r3dg0d <r3dg0d@users.noreply.github.com>"]
+description = "Linux MAC-address randomizer with NetworkManager awareness — honest OPSEC tooling"
+license = "MIT"
+repository = "https://github.com/r3dg0d/macrandom"
+homepage = "https://github.com/r3dg0d/macrandom"
+documentation = "https://docs.rs/macrandom"
+readme = "README.md"
+keywords = ["mac", "privacy", "opsec", "networkmanager", "cli"]
+categories = ["command-line-utilities", "os::linux-apis"]
+rust-version = "1.70"
+
+[lib]
+name = "macrandom"
+path = "src/lib.rs"
+
+[[bin]]
+name = "macrandom"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4.5", features = ["derive", "env", "wrap_help"] }
+clap_complete = "4.5"
+dirs = "5.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "2.0"
+anyhow = "1.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+rand = "0.8"
+ctrlc = "3.4"
+regex = "1.11"
+once_cell = "1.20"
+chrono = { version = "0.4", default-features = false, features = ["clock", "std", "serde"] }
+
+[dev-dependencies]
+tempfile = "3.14"
+assert_cmd = "2.0"
+predicates = "3.1"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
+opt-level = 3
