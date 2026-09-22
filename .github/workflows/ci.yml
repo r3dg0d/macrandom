@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
+jobs:
+  check:
+    name: fmt · clippy · test · build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: cargo fmt
+        run: cargo fmt --all -- --check
+
+      - name: cargo clippy
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: cargo test
+        run: cargo test --all-features
+
+      - name: cargo build --release
+        run: cargo build --release
+
+      - name: smoke --help
+        run: ./target/release/macrandom --help
+
+      - name: smoke list
+        run: ./target/release/macrandom list --all
+
+      - name: smoke completions
+        run: |
+          ./target/release/macrandom completions bash | head -5
+          ./target/release/macrandom completions zsh  | head -5
+          ./target/release/macrandom completions fish | head -5
