@@ -201,6 +201,19 @@ let next = RandomizeMode::VendorPreserving.generate(&orig);
 5. **Legal / ToS.** Some networks prohibit MAC changes. You are responsible for
    local policy compliance.
 
+## Recovery data
+
+Before changing each interface, macrandom saves its original MAC to a private
+(0600) file using an atomic, synchronized replacement. If saving fails, that
+interface is not changed. A completed runtime change is recorded before applying
+NetworkManager persistence, so a later failure retains the original needed by
+`restore`. The first saved original survives repeated randomization.
+
+If the current MAC cannot be read, randomization stops rather than inventing an
+original. Multi-interface operations can partially succeed: an error on a later
+interface does not automatically undo earlier changes. Use `restore` for the
+interfaces already changed. Dry-run does not write saved MAC records.
+
 ## Development
 
 CLI smoke tests use isolated temporary XDG directories. On Linux hosts they

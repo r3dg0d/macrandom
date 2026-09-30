@@ -6,8 +6,10 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
+use tempfile::NamedTempFile;
 use tracing::debug;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -48,7 +50,17 @@ impl SavedStore {
         })?;
         let path = Self::path(data_dir);
         let text = serde_json::to_string_pretty(self)?;
-        fs::write(&path, text).map_err(|e| MacrandomError::Io { path, source: e })?;
+        let io_error = |source| MacrandomError::Io {
+            path: path.clone(),
+            source,
+        };
+        let mut staged = NamedTempFile::new_in(data_dir).map_err(io_error)?;
+        staged.write_all(text.as_bytes()).map_err(io_error)?;
+        staged.as_file().sync_all().map_err(io_error)?;
+        staged.persist(&path).map_err(|e| io_error(e.error))?;
+        fs::File::open(data_dir)
+            .and_then(|dir| dir.sync_all())
+            .map_err(io_error)?;
         Ok(())
     }
 

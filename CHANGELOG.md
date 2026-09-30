@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+- Persist recovery data before every runtime change and retain applied-MAC records across later interface or NetworkManager failures.
+- Save original MAC records atomically with private permissions and synchronization; refuse to randomize an unreadable current MAC.
+- Add simulated recovery/failure tests without touching live interfaces.
+
 - Isolate CLI smoke-test XDG paths in temporary directories.
 - Assert explicit sysfs-unavailable errors in sandboxed package tests and replace vacuous loopback dry-run assertions with expected outcomes.
 
