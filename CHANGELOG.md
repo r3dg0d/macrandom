@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+- Isolate CLI smoke-test XDG paths in temporary directories.
+- Assert explicit sysfs-unavailable errors in sandboxed package tests and replace vacuous loopback dry-run assertions with expected outcomes.
+
 ## [0.1.0] - 2026-09-21
 
 ### Added

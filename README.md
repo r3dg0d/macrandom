@@ -203,6 +203,10 @@ let next = RandomizeMode::VendorPreserving.generate(&orig);
 
 ## Development
 
+CLI smoke tests use isolated temporary XDG directories. On Linux hosts they
+check interface discovery; in build sandboxes without sysfs they verify explicit
+I/O errors instead. Loopback randomization tests use `--dry-run` only.
+
 ```bash
 cargo test
 cargo clippy --all-targets -- -D warnings

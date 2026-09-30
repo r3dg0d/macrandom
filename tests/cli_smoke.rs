@@ -2,9 +2,42 @@
 
 use assert_cmd::Command;
 use predicates::prelude::*;
+use std::ops::{Deref, DerefMut};
+use std::path::Path;
+use tempfile::TempDir;
 
-fn bin() -> Command {
-    Command::cargo_bin("macrandom").unwrap()
+struct TestCommand {
+    command: Command,
+    _paths: TempDir,
+}
+
+impl Deref for TestCommand {
+    type Target = Command;
+    fn deref(&self) -> &Command {
+        &self.command
+    }
+}
+
+impl DerefMut for TestCommand {
+    fn deref_mut(&mut self) -> &mut Command {
+        &mut self.command
+    }
+}
+
+fn bin() -> TestCommand {
+    let paths = tempfile::tempdir().unwrap();
+    let mut command = Command::cargo_bin("macrandom").unwrap();
+    for (variable, directory) in [
+        ("XDG_CONFIG_HOME", "config"),
+        ("XDG_DATA_HOME", "data"),
+        ("XDG_CACHE_HOME", "cache"),
+    ] {
+        command.env(variable, paths.path().join(directory));
+    }
+    TestCommand {
+        command,
+        _paths: paths,
+    }
 }
 
 #[test]
@@ -38,16 +71,31 @@ fn list_help() {
 
 #[test]
 fn list_runs_without_root() {
-    bin().arg("list").assert().success();
+    let mut command = bin();
+    let assertion = command.arg("list").assert();
+    if Path::new("/sys/class/net").is_dir() {
+        assertion.success();
+    } else {
+        // Nix sandboxes omit sysfs; verify the documented I/O failure instead.
+        assertion
+            .code(7)
+            .stderr(predicate::str::contains("/sys/class/net"));
+    }
 }
 
 #[test]
 fn list_all_json() {
-    bin()
-        .args(["--json", "list", "--all"])
-        .assert()
-        .success()
-        .stdout(predicate::str::contains("interfaces"));
+    let mut command = bin();
+    let assertion = command.args(["--json", "list", "--all"]).assert();
+    if Path::new("/sys/class/net").is_dir() {
+        assertion
+            .success()
+            .stdout(predicate::str::contains("interfaces"));
+    } else {
+        assertion
+            .code(7)
+            .stderr(predicate::str::contains("/sys/class/net"));
+    }
 }
 
 #[test]
@@ -76,19 +124,34 @@ fn randomize_requires_iface_or_all() {
 
 #[test]
 fn dry_run_randomize_lo_needs_force() {
-    // lo is skipped by default
-    let assert = bin().args(["--dry-run", "randomize", "lo"]).assert();
-    // Either skipped (exit 3) or not found — both fine for smoke
-    let output = assert.get_output().status.code();
-    assert!(output != Some(0) || output.is_none() || true);
+    let mut command = bin();
+    let assertion = command.args(["--dry-run", "randomize", "lo"]).assert();
+    if Path::new("/sys/class/net/lo").exists() {
+        assertion
+            .code(3)
+            .stderr(predicate::str::contains("default skip list"));
+    } else {
+        assertion
+            .code(2)
+            .stderr(predicate::str::contains("interface not found: lo"));
+    }
 }
 
 #[test]
 fn dry_run_randomize_lo_force() {
-    // May fail with permission or succeed dry-run; should not panic
-    let _ = bin()
+    let mut command = bin();
+    let assertion = command
         .args(["--dry-run", "randomize", "lo", "--force"])
         .assert();
+    if Path::new("/sys/class/net/lo").exists() {
+        assertion
+            .success()
+            .stdout(predicate::str::contains("[dry-run] lo:"));
+    } else {
+        assertion
+            .code(2)
+            .stderr(predicate::str::contains("interface not found: lo"));
+    }
 }
 
 #[test]
